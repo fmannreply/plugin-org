@@ -12,7 +12,7 @@ import {
   loglevel,
   orgApiVersionFlagWithDeprecations,
 } from '@salesforce/sf-plugins-core';
-import { AuthInfo, Messages, Org, SfError, trimTo15 } from '@salesforce/core';
+import { AuthInfo, Messages, Org, SfError, StateAggregator, trimTo15 } from '@salesforce/core';
 import { camelCaseToTitleCase } from '@salesforce/kit';
 import { AuthFieldsFromFS, OrgDisplayReturn, ScratchOrgFields } from '../../shared/orgTypes';
 import { getAliasByUsername } from '../../shared/utils';
@@ -58,6 +58,10 @@ export class OrgDisplayCommand extends SfCommand<OrgDisplayReturn> {
     const isScratchOrg = Boolean(fields.devHubUsername);
     const scratchOrgInfo = isScratchOrg && fields.orgId ? await this.getScratchOrgInformation(fields.orgId) : {};
 
+    const stateAggregator = await StateAggregator.getInstance();
+    const sbxFields = stateAggregator.sandboxes.get(fields.username);
+    sbxFields.prodOrgUsername
+
     const returnValue: OrgDisplayReturn = {
       // renamed properties
       id: fields.orgId,
@@ -67,6 +71,9 @@ export class OrgDisplayCommand extends SfCommand<OrgDisplayReturn> {
       apiVersion: fields.instanceApiVersion,
       accessToken: fields.accessToken,
       instanceUrl: fields.instanceUrl,
+      isDevHub: fields.isDevHub,
+      isScratchOrg: fields.isScratch ?? isScratchOrg,
+      isSandbox: fields.isSandbox,
       username: fields.username,
       clientId: fields.clientId,
       password: fields.password,
@@ -79,6 +86,9 @@ export class OrgDisplayCommand extends SfCommand<OrgDisplayReturn> {
       sfdxAuthUrl: flags.verbose && fields.refreshToken ? authInfo.getSfdxAuthUrl() : undefined,
       alias: await getAliasByUsername(fields.username),
     };
+    if (sbxFields?.prodOrgUsername) {
+      returnValue.prodOrgUsername = sbxFields.prodOrgUsername;
+    }
     this.warn(sharedMessages.getMessage('SecurityWarning'));
     this.print(returnValue);
     return returnValue;

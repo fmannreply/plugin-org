@@ -15,6 +15,7 @@ export type OrgDisplayReturn = Partial<ScratchOrgFields> & {
   instanceUrl: string;
   clientId: string;
   apiVersion?: string;
+  isScratchOrg?: boolean;
 
   alias?: string;
   password?: string;
@@ -22,6 +23,8 @@ export type OrgDisplayReturn = Partial<ScratchOrgFields> & {
   // non-scratch orgs
   connectedStatus?: string;
   sfdxAuthUrl?: string;
+  isSandbox?: boolean;
+  isDevHub?: boolean;
 };
 
 /** Convenience type for the fields that are in the auth file

@@ -116,7 +116,16 @@ export class OrgListCommand extends SfCommand<OrgListResult> {
     if (!nonScratchOrgs.length) {
       this.log(messages.getMessage('noResultsFound'));
     } else {
-      const rows = nonScratchOrgs
+      let prodOrgs: ExtendedAuthFields[] = [];
+      let sandboxOrgs: ExtendedAuthFields[] = [];
+      nonScratchOrgs.map(orgEntry => {
+        if (orgEntry.isSandbox) {
+          sandboxOrgs.push(orgEntry);
+        } else {
+          prodOrgs.push(orgEntry);
+        }
+      })
+      const prodOrgRows = prodOrgs
         .map((row) => getStyledObject(row))
         .map((org) =>
           Object.fromEntries(
@@ -127,7 +136,7 @@ export class OrgListCommand extends SfCommand<OrgListResult> {
         );
 
       this.table(
-        rows,
+        prodOrgRows,
         {
           defaultMarker: {
             header: '',
@@ -142,10 +151,42 @@ export class OrgListCommand extends SfCommand<OrgListResult> {
           ...(!skipconnectionstatus ? { connectedStatus: { header: 'CONNECTED STATUS' } } : {}),
         },
         {
-          title: 'Non-scratch orgs',
+          title: 'Production | DevHub',
         }
       );
+
+      if (sandboxOrgs.length) {
+
+      }
     }
+  }
+
+  private getTableRows<T extends FullyPopulatedScratchOrgFields[] | ExtendedAuthFields[]>(orgData: T, type: OrgType): {[k: string]: string;}[] {
+    const baseOrgFields = ['defaultMarker', 'alias', 'username', 'orgId'];
+    const scratchOrgFields = [...baseOrgFields, 'status', 'expirationDate', 'devHubOrgId', 'createdDate', 'instanceUrl'];
+    const sandboxOrgFields = [...baseOrgFields, 'prodOrg', 'connectedStatus'];
+    const prodOrgFields = [...baseOrgFields, 'connectedStatus'];
+
+
+    return orgData
+      .map(getStyledObject)
+      .map((org) =>
+        Object.fromEntries(
+          Object.entries(org).filter(([key]) =>
+            [
+              'defaultMarker',
+              'alias',
+              'username',
+              'orgId',
+              'status',
+              'expirationDate',
+              'devHubOrgId',
+              'createdDate',
+              'instanceUrl',
+            ].includes(key)
+          )
+        )
+      );
   }
 
   private printScratchOrgTable(scratchOrgs: FullyPopulatedScratchOrgFields[]): void {
